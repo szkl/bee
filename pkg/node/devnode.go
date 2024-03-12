@@ -293,6 +293,10 @@ func NewDevBee(logger log.Logger, o *DevOptions) (b *DevBee, err error) {
 					ma, _ := multiaddr.NewMultiaddr("mock")
 					return []multiaddr.Multiaddr{ma}, nil
 				},
+			), mockP2P.WithBlocklistFunc(
+				func(swarm.Address, time.Duration, string) error {
+					return nil
+				},
 			))
 		acc       = mockAccounting.NewAccounting()
 		kad       = mockTopology.NewTopologyDriver()

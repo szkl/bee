@@ -396,6 +396,10 @@ func (s *Service) mountBusinessDebug(restricted bool) {
 
 	handle("/blocklist", jsonhttp.MethodHandler{
 		"GET": http.HandlerFunc(s.blocklistedPeersHandler),
+		"POST": web.ChainHandlers(
+			jsonhttp.NewMaxBodyBytesHandler(512),
+			web.FinalHandlerFunc(s.blocklistPeerHandler),
+		),
 	})
 
 	handle("/peers/{address}", jsonhttp.MethodHandler{

@@ -5,8 +5,11 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"time"
 
 	"github.com/ethersphere/bee/pkg/jsonhttp"
 	"github.com/ethersphere/bee/pkg/p2p"
@@ -142,4 +145,47 @@ func mapBlockListedPeers(peers []p2p.BlockListedPeer) []BlockListedPeer {
 		})
 	}
 	return out
+}
+
+type blocklistPeerReq = struct {
+	Address  swarm.Address `json:"address"`
+	Duration string        `json:"duration"`
+	Reason   string        `json:"reason"`
+}
+
+func (s *Service) blocklistPeerHandler(w http.ResponseWriter, r *http.Request) {
+	logger := s.logger.WithValues("block_address").Build()
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Debug("read request body failed", "error", err)
+		logger.Error(nil, "read request body failed")
+		jsonhttp.BadRequest(w, "Read request body")
+		return
+	}
+
+	var payload blocklistPeerReq
+	if err := json.Unmarshal(body, &payload); err != nil {
+		logger.Debug("unmarshal request body failed", "error", err)
+		logger.Error(nil, "unmarshal request body failed")
+		jsonhttp.BadRequest(w, "Unmarshal json body")
+		return
+	}
+
+	duration, err := time.ParseDuration(payload.Duration)
+	if err != nil {
+		logger.Debug("couldn't parse duration", "error", err)
+		logger.Error(nil, "couldn't parse duration")
+		jsonhttp.BadRequest(w, "Parse duration")
+		return
+	}
+
+	if err := s.p2p.Blocklist(payload.Address, duration, payload.Reason); err != nil {
+		logger.Debug("couldn't blocklist address", "error", err)
+		logger.Error(nil, "couldn't blocklist address")
+		jsonhttp.BadRequest(w, "Blocklist address")
+		return
+	}
+
+	jsonhttp.OK(w, nil)
 }

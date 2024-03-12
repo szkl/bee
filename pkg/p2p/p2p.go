@@ -64,6 +64,7 @@ type Service interface {
 	Connect(ctx context.Context, addr ma.Multiaddr) (address *bzz.Address, err error)
 	Disconnecter
 	Peers() []Peer
+	Blocklist(swarm.Address, time.Duration, string) error
 	Blocklisted(swarm.Address) (bool, error)
 	BlocklistedPeers() ([]BlockListedPeer, error)
 	Addresses() ([]ma.Multiaddr, error)
